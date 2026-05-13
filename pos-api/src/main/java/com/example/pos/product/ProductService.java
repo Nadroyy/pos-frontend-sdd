@@ -85,6 +85,22 @@ public class ProductService {
         log.info("Product soft-deleted: id={}", id);
     }
 
+    // ------------------------------------------------- INTERNAL (package use)
+
+    /** Returns the raw entity for internal use by other services. */
+    @Transactional(readOnly = true)
+    public Product getEntityById(Long id) {
+        return getActiveOrThrow(id);
+    }
+
+    /** Returns the raw entity by barcode for internal use. */
+    @Transactional(readOnly = true)
+    public Product getEntityByBarcode(String barcode) {
+        return repository.findByBarcodeAndActiveTrue(barcode)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Product not found with barcode: " + barcode));
+    }
+
     // ------------------------------------------------------------ HELPERS
 
     private Product getActiveOrThrow(Long id) {
