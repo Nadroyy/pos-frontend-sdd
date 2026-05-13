@@ -1,7 +1,6 @@
 package com.example.pos.sale.dto;
 
 import com.example.pos.sale.PaymentType;
-import com.example.pos.sale.SaleStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,25 +14,34 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SaleResponse {
+public class ReceiptResponse {
 
-    private Long id;
-    private SaleStatus status;
-    private List<SaleItemResponse> items;
+    private Long saleId;
+    private String transactionId;
+    private LocalDateTime completedAt;
+
+    private List<ReceiptItemLine> items;
+
     private BigDecimal subtotal;
     private BigDecimal taxAmount;
     private BigDecimal discountAmount;
     private BigDecimal total;
 
-    // Payment fields
     private PaymentType paymentType;
     private BigDecimal amountReceived;
     private BigDecimal changeAmount;
     private String paymentReference;
     private String creditReferenceNumber;
-    private String transactionId;
-    private LocalDateTime completedAt;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReceiptItemLine {
+        private String productName;
+        private String barcode;
+        private BigDecimal unitPrice;
+        private int quantity;
+        private BigDecimal subtotal;
+    }
 }

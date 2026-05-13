@@ -55,6 +55,31 @@ public class Sale {
     @Builder.Default
     private BigDecimal total = BigDecimal.ZERO;
 
+    // ---- Payment fields (populated at checkout) ----
+
+    @Enumerated(EnumType.STRING)
+    private PaymentType paymentType;
+
+    /** CASH: amount handed by the customer. */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal amountReceived;
+
+    /** CASH: change returned to the customer. */
+    @Column(precision = 10, scale = 2)
+    private BigDecimal changeAmount;
+
+    /** CARD: terminal reference / authorisation code. */
+    private String paymentReference;
+
+    /** CREDIT: generated reference number for the credit transaction. */
+    private String creditReferenceNumber;
+
+    /** Unique transaction ID generated at checkout completion. */
+    private String transactionId;
+
+    /** Timestamp when the sale was completed. */
+    private LocalDateTime completedAt;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

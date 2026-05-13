@@ -1,6 +1,8 @@
 package com.example.pos.sale;
 
 import com.example.pos.sale.dto.AddItemRequest;
+import com.example.pos.sale.dto.CheckoutRequest;
+import com.example.pos.sale.dto.ReceiptResponse;
 import com.example.pos.sale.dto.SaleResponse;
 import com.example.pos.sale.dto.UpdateItemRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +22,7 @@ import java.util.List;
 public class SaleController {
 
     private final SaleService service;
+    private final CheckoutService checkoutService;
 
     @GetMapping
     @Operation(summary = "List all sales")
@@ -62,5 +65,19 @@ public class SaleController {
             @PathVariable Long id,
             @PathVariable Long itemId) {
         return ResponseEntity.ok(service.removeItem(id, itemId));
+    }
+
+    @PostMapping("/{id}/checkout")
+    @Operation(summary = "Complete the sale with payment")
+    public ResponseEntity<SaleResponse> checkout(
+            @PathVariable Long id,
+            @Valid @RequestBody CheckoutRequest request) {
+        return ResponseEntity.ok(checkoutService.checkout(id, request));
+    }
+
+    @GetMapping("/{id}/receipt")
+    @Operation(summary = "Get receipt for a completed sale")
+    public ResponseEntity<ReceiptResponse> getReceipt(@PathVariable Long id) {
+        return ResponseEntity.ok(checkoutService.getReceipt(id));
     }
 }
