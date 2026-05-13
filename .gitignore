@@ -4,3 +4,9 @@ pos-api/target/
 *.class
 
 *.log
+
+node_modules/
+
+pos-frontend-sdd/node_modules/
+
+pos-frontend-sdd/dist/

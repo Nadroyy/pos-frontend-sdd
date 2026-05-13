@@ -1,21 +1,21 @@
-# Supermarket POS Frontend - SDD Workshop
+# POS Supermercado - Frontend
 
-Ready-to-upload React + TypeScript + Vite project.
+Proyecto React + TypeScript + Vite listo para usar.
 
-## Included
+## Contenido
 - `.kiro/specs/pos-frontend/requirements.md`
 - `.kiro/specs/pos-frontend/design.md`
 - `.kiro/specs/pos-frontend/tasks.md`
-- Working POS frontend
+- Frontend POS funcional en español
 - `reflection.md`
 
-## Run
+## Ejecutar
 ```bash
 npm install
 npm run dev
 ```
 
-## Build
+## Compilar
 ```bash
 npm run build
 ```
