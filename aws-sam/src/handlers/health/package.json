@@ -1,0 +1,14 @@
+{
+  "name": "pos-health-handler",
+  "version": "1.0.0",
+  "description": "Lambda handler para el endpoint de health check del POS",
+  "main": "app.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Sin tests por ahora\" && exit 0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

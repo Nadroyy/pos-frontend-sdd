@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  pos-serverless-sdd
+  Arquitectura serverless para el sistema POS - Supermarket Point of Sale
+
+# ── Parámetros globales para todas las funciones Lambda ──────────────────
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref PosTable
+        NODE_ENV: production
+
+# ── Recursos ──────────────────────────────────────────────────────────────
+Resources:
+
+  # ── API Gateway ──────────────────────────────────────────────────────────
+  PosApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: pos-serverless-api
+      StageName: prod
+      Description: API REST del sistema POS Supermercado
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+
+  # ── Lambda: Health Check ─────────────────────────────────────────────────
+  PosApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pos-health-check
+      Description: Endpoint de verificación de estado del servicio
+      CodeUri: src/handlers/health/
+      Handler: app.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PosTable
+      Events:
+        HealthGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PosApi
+            Path: /health
+            Method: GET
+
+  # ── DynamoDB: Tabla principal ─────────────────────────────────────────────
+  PosTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "pos-table-${AWS::StackName}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      Tags:
+        - Key: Project
+          Value: pos-serverless-sdd
+        - Key: Environment
+          Value: prod
+
+# ── Outputs ───────────────────────────────────────────────────────────────
+Outputs:
+
+  ApiUrl:
+    Description: URL base de la API Gateway
+    Value: !Sub "https://${PosApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiUrl"
+
+  FunctionName:
+    Description: Nombre de la función Lambda principal
+    Value: !Ref PosApiFunction
+    Export:
+      Name: !Sub "${AWS::StackName}-FunctionName"
+
+  TableName:
+    Description: Nombre de la tabla DynamoDB
+    Value: !Ref PosTable
+    Export:
+      Name: !Sub "${AWS::StackName}-TableName"

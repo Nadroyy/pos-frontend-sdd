@@ -10,3 +10,16 @@ node_modules/
 pos-frontend-sdd/node_modules/
 
 pos-frontend-sdd/dist/
+
+# ── AWS SAM ──────────────────────────────────────────────────────────────
+.aws-sam/
+aws-sam/.aws-sam/
+aws-sam/node_modules/
+
+# ── Credenciales y secretos (NUNCA subir al repositorio) ─────────────────
+.env
+.env.*
+*.pem
+*.key
+credentials
+aws-credentials

@@ -1,0 +1,21 @@
+# Configuración de AWS SAM CLI
+# Generado para el proyecto pos-serverless-sdd
+# Documentación: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html
+
+version = 0.1
+
+[default]
+[default.global.parameters]
+stack_name = "pos-serverless-sdd"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+stack_name        = "pos-serverless-sdd"
+region            = "us-east-1"
+confirm_changeset = true
+capabilities      = "CAPABILITY_IAM"
+# s3_bucket se configura automáticamente con --guided en el primer despliegue
+# No incluir credenciales aquí — usar `aws configure` o variables de entorno
