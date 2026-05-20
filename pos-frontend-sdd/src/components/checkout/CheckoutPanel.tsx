@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Payment, PaymentMethod } from '../../types/payment';
 import type { CartItem, CartSummary } from '../../types/cart';
 import type { Receipt } from '../../types/receipt';
@@ -8,18 +8,18 @@ type Props = {
   items: CartItem[];
   summary: CartSummary;
   onComplete: (r: Receipt) => void;
-  checkoutRef?: React.RefObject<HTMLElement>;
+  amountRef?: React.RefObject<HTMLInputElement | null>;
 };
 
-export function CheckoutPanel({ items, summary, onComplete, checkoutRef }: Props) {
+export function CheckoutPanel({ items, summary, onComplete, amountRef }: Props) {
   const [method, setMethod]       = useState<PaymentMethod>('cash');
   const [amount, setAmount]       = useState('');
   const [reference, setReference] = useState('');
   const [payments, setPayments]   = useState<Payment[]>([]);
 
-  const paid      = useMemo(() => roundMoney(payments.reduce((s, p) => s + p.amount, 0)), [payments]);
-  const remaining = roundMoney(Math.max(summary.grandTotal - paid, 0));
-  const change    = roundMoney(Math.max(paid - summary.grandTotal, 0));
+  const paid        = useMemo(() => roundMoney(payments.reduce((s, p) => s + p.amount, 0)), [payments]);
+  const remaining   = roundMoney(Math.max(summary.grandTotal - paid, 0));
+  const change      = roundMoney(Math.max(paid - summary.grandTotal, 0));
   const canCheckout = items.length > 0 && paid >= summary.grandTotal;
 
   function addPayment() {
@@ -41,60 +41,77 @@ export function CheckoutPanel({ items, summary, onComplete, checkoutRef }: Props
   }
 
   return (
-    <section className='panel' ref={checkoutRef as React.RefObject<HTMLElement>}>
-      <h2>Cobro <kbd>F4</kbd></h2>
-      <p className='total-due'>Monto a pagar: <strong>{formatMoney(summary.grandTotal)}</strong></p>
+    <div className='co-wrap'>
 
-      <div className='grid two'>
-        <label>
-          Método
-          <select value={method} onChange={e => setMethod(e.target.value as PaymentMethod)}>
-            <option value='cash'>Efectivo</option>
-            <option value='card'>Tarjeta</option>
-            <option value='wallet'>Billetera Digital</option>
-          </select>
-        </label>
-        <label>
-          Monto
-          <input
-            type='number' min='0'
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addPayment()}
-          />
-        </label>
+      {/* Cobro F4 + total */}
+      <div className='co-head'>
+        <span className='co-label'>Cobro F4</span>
+        <strong className='co-total'>{formatMoney(summary.grandTotal)}</strong>
       </div>
 
-      {method !== 'cash' && (
-        <label>
-          Referencia
+      {/* Fila de pago */}
+      <div className='co-pay-row'>
+        <select
+          className='co-sel'
+          value={method}
+          onChange={e => setMethod(e.target.value as PaymentMethod)}
+          tabIndex={0}
+        >
+          <option value='cash'>Efectivo</option>
+          <option value='card'>Tarjeta</option>
+          <option value='wallet'>Billetera</option>
+        </select>
+        <input
+          ref={amountRef}
+          className='co-amt'
+          type='number'
+          min='0'
+          placeholder='Monto'
+          value={amount}
+          onChange={e => setAmount(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && addPayment()}
+          tabIndex={0}
+        />
+        {method !== 'cash' && (
           <input
+            className='co-ref'
+            placeholder='Referencia'
             value={reference}
             onChange={e => setReference(e.target.value)}
-            placeholder='Referencia de transacción'
+            tabIndex={0}
           />
-        </label>
-      )}
-
-      <button onClick={addPayment}>Agregar Pago</button>
-
-      <div>
-        {payments.map(p => (
-          <p key={p.id}>{p.method}: {formatMoney(p.amount)} {p.reference && `(${p.reference})`}</p>
-        ))}
+        )}
+        <button className='co-add-btn' onClick={addPayment} tabIndex={0}>+ Pago</button>
       </div>
 
-      <p>Pagado:    <strong>{formatMoney(paid)}</strong></p>
-      <p>Restante:  <strong>{formatMoney(remaining)}</strong></p>
-      <p>Cambio:    <strong>{formatMoney(change)}</strong></p>
-
-      {!canCheckout && (
-        <p className='muted'>Agrega el pago suficiente para completar la venta.</p>
+      {/* Pagos registrados */}
+      {payments.length > 0 && (
+        <div className='co-chips'>
+          {payments.map(p => (
+            <span key={p.id} className='co-chip'>
+              {p.method}: {formatMoney(p.amount)}{p.reference ? ` (${p.reference})` : ''}
+            </span>
+          ))}
+        </div>
       )}
 
-      <button disabled={!canCheckout} onClick={complete} className='btn-complete'>
+      {/* Pagado / Restante / Cambio */}
+      <div className='co-status'>
+        <span>Pagado: <strong>{formatMoney(paid)}</strong></span>
+        <span>Restante: <strong>{formatMoney(remaining)}</strong></span>
+        <span>Cambio: <strong>{formatMoney(change)}</strong></span>
+      </div>
+
+      {/* Completar */}
+      <button
+        className='co-complete'
+        disabled={!canCheckout}
+        onClick={complete}
+        tabIndex={0}
+      >
         Completar Venta
       </button>
-    </section>
+
+    </div>
   );
 }

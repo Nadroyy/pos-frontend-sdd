@@ -14,65 +14,87 @@ type Props = {
 export function CartPanel({ items, summary, discount, onQuantity, onRemove, onDiscount, onClear }: Props) {
   function handleClear() {
     if (items.length === 0) return;
-    if (window.confirm('¿Vaciar el carrito? Se eliminarán todos los productos.')) {
-      onClear();
-    }
+    if (window.confirm('¿Vaciar el carrito?')) onClear();
   }
 
+  const hasDiscount = discount.type !== 'none' && discount.value > 0;
+
   return (
-    <section className='panel'>
-      <div className='cart-header'>
-        <h2>Carrito ({items.length})</h2>
+    <div className='cart-wrap'>
+
+      {/* Encabezado del carrito */}
+      <div className='cart-head-row'>
+        <span>Carrito ({items.length})</span>
         {items.length > 0 && (
-          <button className='danger btn-sm' onClick={handleClear} title='Ctrl+Retroceso'>
-            Vaciar <kbd>Ctrl+⌫</kbd>
-          </button>
+          <button className='lnk' onClick={handleClear} tabIndex={0}>Vaciar</button>
         )}
       </div>
 
+      {/* Líneas de producto */}
       {items.length === 0
-        ? <p className='muted'>El carrito está vacío.</p>
+        ? <div className='cart-empty'>
+            <div>No hay productos en el carrito.</div>
+            <div className='cart-empty-hint'>Escanea un codigo o busca un producto para comenzar.</div>
+          </div>
         : items.map(i => (
-          <article className='cart-row' key={i.product.id}>
-            <div>
-              <strong>{i.product.name}</strong>
-              <p>{formatMoney(i.product.price)} — IVA {(i.product.taxRate * 100).toFixed(0)}%</p>
-            </div>
-            <div className='qty'>
-              <button onClick={() => onQuantity(i.product.id, i.quantity - 1)}>−</button>
-              <span>{i.quantity}</span>
-              <button onClick={() => onQuantity(i.product.id, i.quantity + 1)}>+</button>
-            </div>
-            <strong>{formatMoney(i.product.price * i.quantity)}</strong>
-            <button className='danger' onClick={() => onRemove(i.product.id)}>✕</button>
-          </article>
+          <div key={i.product.id} className='cart-line'>
+            <span className='cl-name'>
+              {i.product.name}
+              {i.product.taxRate > 0 && <span className='cl-iva'> IVA{(i.product.taxRate*100).toFixed(0)}%</span>}
+            </span>
+            <span className='cl-detail'>
+              ({i.quantity}) x {formatMoney(i.product.price)} = {formatMoney(i.product.price * i.quantity)}
+            </span>
+            <span className='cl-actions'>
+              <button className='qty-btn' onClick={() => onQuantity(i.product.id, i.quantity - 1)} tabIndex={0}>-</button>
+              <button className='qty-btn' onClick={() => onQuantity(i.product.id, i.quantity + 1)} tabIndex={0}>+</button>
+              <button className='del-btn' onClick={() => onRemove(i.product.id)} tabIndex={0}>x</button>
+            </span>
+          </div>
         ))
       }
 
-      <div className='discount'>
-        <h3>Descuento</h3>
+      {/* Descuento */}
+      <div className='disc-row'>
         <select
+          className='disc-sel'
           value={discount.type}
           onChange={e => onDiscount({ type: e.target.value as Discount['type'], value: discount.value })}
+          tabIndex={0}
         >
           <option value='none'>Sin descuento</option>
-          <option value='percentage'>Porcentaje (%)</option>
-          <option value='fixed'>Monto fijo ($)</option>
+          <option value='percentage'>% Descuento</option>
+          <option value='fixed'>$ Descuento</option>
         </select>
-        <input
-          type='number' min='0'
-          value={discount.value}
-          onChange={e => onDiscount({ ...discount, value: Number(e.target.value) })}
-        />
-        <button onClick={() => onDiscount({ type: 'none', value: 0 })}>Restablecer</button>
+        {discount.type !== 'none' && (
+          <>
+            <input
+              className='disc-val'
+              type='number' min='0'
+              value={discount.value}
+              onChange={e => onDiscount({ ...discount, value: Number(e.target.value) })}
+              tabIndex={0}
+            />
+            <button className='lnk' onClick={() => onDiscount({ type: 'none', value: 0 })} tabIndex={0}>quitar</button>
+          </>
+        )}
       </div>
 
-      <div className='summary'>
-        <p>Subtotal   <strong>{formatMoney(summary.subtotal)}</strong></p>
-        <p>Descuento  <strong>−{formatMoney(summary.discountTotal)}</strong></p>
-        <p>IVA        <strong>{formatMoney(summary.taxTotal)}</strong></p>
-        <h3>Total     <strong>{formatMoney(summary.grandTotal)}</strong></h3>
+      {/* Totales */}
+      <div className='totals-wrap'>
+        {hasDiscount && (
+          <div className='total-line'>
+            <span>Descuento</span><span>-{formatMoney(summary.discountTotal)}</span>
+          </div>
+        )}
+        <div className='total-line'>
+          <span>IVA</span><span>{formatMoney(summary.taxTotal)}</span>
+        </div>
+        <div className='total-line total-final'>
+          <span>Total</span><strong>{formatMoney(summary.grandTotal)}</strong>
+        </div>
       </div>
-    </section>
+
+    </div>
   );
 }
