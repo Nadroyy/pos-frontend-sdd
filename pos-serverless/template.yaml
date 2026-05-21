@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: POS Serverless API - Supermarket
+
+Globals:
+  Function:
+    Runtime: java21
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        PRODUCT_TABLE_NAME: !Ref ProductosTable
+        SALES_TABLE_NAME: !Ref VentasTable
+
+Resources:
+  ProductosTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ProductosTable
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  VentasTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: VentasTable
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  ProductosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pos-productos-function
+      Handler: com.pos.productos.ProductosHandler::handleRequest
+      CodeUri: productos-function/
+      Runtime: java21
+      Architectures:
+        - x86_64
+      Events:
+        GetProductos:
+          Type: HttpApi
+          Properties:
+            Path: /productos
+            Method: GET
+            ApiId: !Ref PosHttpApi
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ProductosTable
+
+  VentasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pos-ventas-function
+      Handler: com.pos.ventas.VentasHandler::handleRequest
+      CodeUri: ventas-function/
+      Runtime: java21
+      Architectures:
+        - x86_64
+      Events:
+        PostVentas:
+          Type: HttpApi
+          Properties:
+            Path: /ventas
+            Method: POST
+            ApiId: !Ref PosHttpApi
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref VentasTable
+
+  PosHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Name: pos-http-api
+      StageName: prod
+      AccessLogSettings:
+        DestinationArn: !GetAtt ApiLogs.Arn
+        Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","status":$context.status,"responseLength":"$context.responseLength"}'
+
+  ApiLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/serverless/pos-api-logs
+      RetentionInDays: 7
+
+Outputs:
+  ApiUrl:
+    Description: URL del API Gateway
+    Value: !Sub "https://${PosHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+    Export:
+      Name: PosApiUrl
+  ProductosTableName:
+    Description: Nombre de la tabla de Productos
+    Value: !Ref ProductosTable
+    Export:
+      Name: PosProductosTableName
+  VentasTableName:
+    Description: Nombre de la tabla de Ventas
+    Value: !Ref VentasTable
+    Export:
+      Name: PosVentasTableName
