@@ -12,8 +12,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.PutItemEnhancedRequest;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -47,9 +46,9 @@ public class VentasHandler implements RequestHandler<APIGatewayProxyRequestEvent
 
             // Crear registro de venta
             Sale sale = new Sale();
-            String saleId = "SALE#" + UUID.randomUUID().toString();
-            sale.setPk(saleId);
-            sale.setCreatedAt(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            String saleId = UUID.randomUUID().toString();
+            sale.setSaleId(saleId);
+            sale.setCreatedAt(Instant.now().toString());
             sale.setPayload(body);
             sale.setTotal(saleRequest.getTotal());
             sale.setStatus("REGISTERED");
@@ -64,7 +63,7 @@ public class VentasHandler implements RequestHandler<APIGatewayProxyRequestEvent
             SaleResponse response = new SaleResponse();
             response.setSaleId(saleId);
             response.setStatus("REGISTERED");
-            response.setTimestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            response.setTimestamp(Instant.now().toString());
 
             return buildResponse(201, response);
 

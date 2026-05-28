@@ -6,19 +6,19 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 @DynamoDbBean
 public class Sale {
 
-    private String pk;
+    private String saleId;
     private String createdAt;
     private String payload;
     private Double total;
     private String status;
 
     @DynamoDbPartitionKey
-    public String getPk() {
-        return pk;
+    public String getSaleId() {
+        return saleId;
     }
 
-    public void setPk(String pk) {
-        this.pk = pk;
+    public void setSaleId(String saleId) {
+        this.saleId = saleId;
     }
 
     public String getCreatedAt() {
