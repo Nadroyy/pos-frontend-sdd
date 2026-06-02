@@ -21,6 +21,14 @@ public class VentasHandler implements RequestHandler<APIGatewayProxyRequestEvent
     private DynamoDbEnhancedClient dynamoDbEnhancedClient;
     private DynamoDbTable<Sale> saleTable;
 
+    /** Constructor por defecto — usado por Lambda en producción. */
+    public VentasHandler() {}
+
+    /** Constructor para inyección en pruebas unitarias. */
+    VentasHandler(DynamoDbTable<Sale> saleTable) {
+        this.saleTable = saleTable;
+    }
+
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input, Context context) {
         initializeDynamoDB();
@@ -73,7 +81,7 @@ public class VentasHandler implements RequestHandler<APIGatewayProxyRequestEvent
     }
 
     private void initializeDynamoDB() {
-        if (dynamoDbEnhancedClient == null) {
+        if (saleTable == null) {
             DynamoDbClient dynamoDbClient = DynamoDbClient.builder()
                 .region(Region.of(System.getenv("AWS_REGION")))
                 .credentialsProvider(DefaultCredentialsProvider.create())

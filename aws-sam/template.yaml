@@ -4,16 +4,12 @@ Description: >
   pos-serverless-sdd
   Arquitectura serverless para el sistema POS - Supermarket Point of Sale
 
-# ── Parámetros globales para todas las funciones Lambda ──────────────────
+# ── Globals para funciones Lambda Java ───────────────────────────────────
 Globals:
   Function:
-    Runtime: nodejs20.x
-    Timeout: 10
-    MemorySize: 256
-    Environment:
-      Variables:
-        TABLE_NAME: !Ref PosTable
-        NODE_ENV: production
+    Runtime: java21
+    Timeout: 30
+    MemorySize: 512
 
 # ── Recursos ──────────────────────────────────────────────────────────────
 Resources:
@@ -30,41 +26,80 @@ Resources:
         AllowHeaders: "'Content-Type,Authorization'"
         AllowOrigin: "'*'"
 
-  # ── Lambda: Health Check ─────────────────────────────────────────────────
-  PosApiFunction:
+  # ── Lambda: Productos ─────────────────────────────────────────────────────
+  ProductosFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: pos-health-check
-      Description: Endpoint de verificación de estado del servicio
-      CodeUri: src/handlers/health/
-      Handler: app.handler
+      FunctionName: pos-productos
+      Description: GET /productos - Lista y busca productos desde DynamoDB
+      CodeUri: productos-function/
+      Handler: com.pos.productos.ProductosHandler::handleRequest
+      Environment:
+        Variables:
+          PRODUCT_TABLE_NAME: !Ref ProductosTable
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PosTable
+            TableName: !Ref ProductosTable
       Events:
-        HealthGet:
+        GetProductos:
           Type: Api
           Properties:
             RestApiId: !Ref PosApi
-            Path: /health
+            Path: /productos
             Method: GET
 
-  # ── DynamoDB: Tabla principal ─────────────────────────────────────────────
-  PosTable:
+  # ── Lambda: Ventas ────────────────────────────────────────────────────────
+  VentasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: pos-ventas
+      Description: POST /ventas - Registra una venta en DynamoDB
+      CodeUri: ventas-function/
+      Handler: com.pos.ventas.VentasHandler::handleRequest
+      Environment:
+        Variables:
+          SALES_TABLE_NAME: !Ref VentasTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref VentasTable
+      Events:
+        PostVentas:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PosApi
+            Path: /ventas
+            Method: POST
+
+  # ── DynamoDB: Tabla Productos ─────────────────────────────────────────────
+  ProductosTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub "pos-table-${AWS::StackName}"
+      TableName: !Sub "productos-table-${AWS::StackName}"
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: pk
-          AttributeType: S
-        - AttributeName: sk
+        - AttributeName: productId
           AttributeType: S
       KeySchema:
-        - AttributeName: pk
+        - AttributeName: productId
           KeyType: HASH
-        - AttributeName: sk
-          KeyType: RANGE
+      Tags:
+        - Key: Project
+          Value: pos-serverless-sdd
+        - Key: Environment
+          Value: prod
+
+  # ── DynamoDB: Tabla Ventas ────────────────────────────────────────────────
+  VentasTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "ventas-table-${AWS::StackName}"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: saleId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: saleId
+          KeyType: HASH
       Tags:
         - Key: Project
           Value: pos-serverless-sdd
@@ -80,14 +115,26 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-ApiUrl"
 
-  FunctionName:
-    Description: Nombre de la función Lambda principal
-    Value: !Ref PosApiFunction
+  ProductosFunctionArn:
+    Description: ARN de la Lambda de productos
+    Value: !GetAtt ProductosFunction.Arn
     Export:
-      Name: !Sub "${AWS::StackName}-FunctionName"
+      Name: !Sub "${AWS::StackName}-ProductosFunctionArn"
 
-  TableName:
-    Description: Nombre de la tabla DynamoDB
-    Value: !Ref PosTable
+  VentasFunctionArn:
+    Description: ARN de la Lambda de ventas
+    Value: !GetAtt VentasFunction.Arn
     Export:
-      Name: !Sub "${AWS::StackName}-TableName"
+      Name: !Sub "${AWS::StackName}-VentasFunctionArn"
+
+  ProductosTableName:
+    Description: Nombre de la tabla DynamoDB de productos
+    Value: !Ref ProductosTable
+    Export:
+      Name: !Sub "${AWS::StackName}-ProductosTableName"
+
+  VentasTableName:
+    Description: Nombre de la tabla DynamoDB de ventas
+    Value: !Ref VentasTable
+    Export:
+      Name: !Sub "${AWS::StackName}-VentasTableName"

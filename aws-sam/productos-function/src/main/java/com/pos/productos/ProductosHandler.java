@@ -21,6 +21,14 @@ public class ProductosHandler implements RequestHandler<APIGatewayProxyRequestEv
     private DynamoDbEnhancedClient dynamoDbEnhancedClient;
     private DynamoDbTable<Product> productTable;
 
+    /** Constructor por defecto — usado por Lambda en producción. */
+    public ProductosHandler() {}
+
+    /** Constructor para inyección en pruebas unitarias. */
+    ProductosHandler(DynamoDbTable<Product> productTable) {
+        this.productTable = productTable;
+    }
+
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input, Context context) {
         initializeDynamoDB();
@@ -51,7 +59,7 @@ public class ProductosHandler implements RequestHandler<APIGatewayProxyRequestEv
     }
 
     private void initializeDynamoDB() {
-        if (dynamoDbEnhancedClient == null) {
+        if (productTable == null) {
             DynamoDbClient dynamoDbClient = DynamoDbClient.builder()
                 .region(Region.of(System.getenv("AWS_REGION")))
                 .credentialsProvider(DefaultCredentialsProvider.create())

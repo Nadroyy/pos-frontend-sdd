@@ -1,0 +1,4 @@
+com\pos\ventas\SaleRequest.class
+com\pos\ventas\Sale.class
+com\pos\ventas\SaleResponse.class
+com\pos\ventas\VentasHandler.class
