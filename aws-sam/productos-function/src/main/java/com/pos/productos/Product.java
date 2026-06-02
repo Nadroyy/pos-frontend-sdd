@@ -6,7 +6,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbParti
 @DynamoDbBean
 public class Product {
 
-    private String pk;
+    private String productId;
     private String barcode;
     private String name;
     private String category;
@@ -14,12 +14,12 @@ public class Product {
     private Integer stock;
 
     @DynamoDbPartitionKey
-    public String getPk() {
-        return pk;
+    public String getProductId() {
+        return productId;
     }
 
-    public void setPk(String pk) {
-        this.pk = pk;
+    public void setProductId(String productId) {
+        this.productId = productId;
     }
 
     public String getBarcode() {

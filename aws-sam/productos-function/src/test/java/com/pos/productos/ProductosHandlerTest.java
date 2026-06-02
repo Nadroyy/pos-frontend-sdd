@@ -43,14 +43,14 @@ class ProductosHandlerTest {
     @Test
     void testGetAllProducts_returnsOk() {
         Product p1 = new Product();
-        p1.setPk("P001");
+        p1.setProductId("P001");
         p1.setName("Leche Entera");
         p1.setCategory("Lácteos");
         p1.setPrice(1.50);
         p1.setStock(100);
 
         Product p2 = new Product();
-        p2.setPk("P002");
+        p2.setProductId("P002");
         p2.setName("Pan Integral");
         p2.setCategory("Panadería");
         p2.setPrice(0.80);
@@ -104,12 +104,12 @@ class ProductosHandlerTest {
     @Test
     void testSearchByQuery_filtersProductsByName() {
         Product leche = new Product();
-        leche.setPk("P001");
+        leche.setProductId("P001");
         leche.setName("Leche Entera");
         leche.setCategory("Lácteos");
 
         Product pan = new Product();
-        pan.setPk("P002");
+        pan.setProductId("P002");
         pan.setName("Pan Integral");
         pan.setCategory("Panadería");
 
