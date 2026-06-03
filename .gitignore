@@ -1,20 +1,19 @@
+# ── Maven build artifacts ────────────────────────────────────────────────
+target/
+**/target/
 
-pos-api/target/
+# ── AWS SAM build artifacts ──────────────────────────────────────────────
+.aws-sam/
+**/.aws-sam/
 
+# ── Java ──────────────────────────────────────────────────────────────────
 *.class
-
 *.log
 
+# ── Node / Frontend ───────────────────────────────────────────────────────
 node_modules/
-
-pos-frontend-sdd/node_modules/
-
+**/node_modules/
 pos-frontend-sdd/dist/
-
-# ── AWS SAM ──────────────────────────────────────────────────────────────
-.aws-sam/
-aws-sam/.aws-sam/
-aws-sam/node_modules/
 
 # ── Credenciales y secretos (NUNCA subir al repositorio) ─────────────────
 .env
@@ -23,3 +22,4 @@ aws-sam/node_modules/
 *.key
 credentials
 aws-credentials
+samconfig.toml

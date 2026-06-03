@@ -30,7 +30,6 @@ Resources:
   ProductosFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: pos-productos
       Description: GET /productos - Lista y busca productos desde DynamoDB
       CodeUri: productos-function/
       Handler: com.pos.productos.ProductosHandler::handleRequest
@@ -52,7 +51,6 @@ Resources:
   VentasFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: pos-ventas
       Description: POST /ventas - Registra una venta en DynamoDB
       CodeUri: ventas-function/
       Handler: com.pos.ventas.VentasHandler::handleRequest
@@ -74,7 +72,7 @@ Resources:
   ProductosTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub "productos-table-${AWS::StackName}"
+      TableName: ProductosTable
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: productId
@@ -92,7 +90,7 @@ Resources:
   VentasTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub "ventas-table-${AWS::StackName}"
+      TableName: VentasTable
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: saleId
