@@ -3,6 +3,7 @@ import type { Payment, PaymentMethod } from '../../types/payment';
 import type { CartItem, CartSummary } from '../../types/cart';
 import type { Receipt } from '../../types/receipt';
 import { formatMoney, roundMoney } from '../../utils/money';
+import { registrarVenta } from '../../services/ventaService';
 
 type Props = {
   items: CartItem[];
@@ -12,14 +13,16 @@ type Props = {
 };
 
 export function CheckoutPanel({ items, summary, onComplete, amountRef }: Props) {
-  const [method, setMethod]       = useState<PaymentMethod>('cash');
-  const [amount, setAmount]       = useState('');
-  const [reference, setReference] = useState('');
-  const [payments, setPayments]   = useState<Payment[]>([]);
+  const [method,     setMethod]     = useState<PaymentMethod>('cash');
+  const [amount,     setAmount]     = useState('');
+  const [reference,  setReference]  = useState('');
+  const [payments,   setPayments]   = useState<Payment[]>([]);
+  const [completing, setCompleting] = useState(false);
+  const [error,      setError]      = useState<string | null>(null);
 
-  const paid        = useMemo(() => roundMoney(payments.reduce((s, p) => s + p.amount, 0)), [payments]);
-  const remaining   = roundMoney(Math.max(summary.grandTotal - paid, 0));
-  const change      = roundMoney(Math.max(paid - summary.grandTotal, 0));
+  const paid      = useMemo(() => roundMoney(payments.reduce((s, p) => s + p.amount, 0)), [payments]);
+  const remaining = roundMoney(Math.max(summary.grandTotal - paid, 0));
+  const change    = roundMoney(Math.max(paid - summary.grandTotal, 0));
   const canCheckout = items.length > 0 && paid >= summary.grandTotal;
 
   function addPayment() {
@@ -30,14 +33,29 @@ export function CheckoutPanel({ items, summary, onComplete, amountRef }: Props) 
     setReference('');
   }
 
-  function complete() {
-    if (!canCheckout) return;
-    onComplete({
-      receiptNumber: `POS-${Date.now()}`,
-      createdAt: new Date().toLocaleString(),
-      items, summary, payments, change,
-    });
-    setPayments([]);
+  async function complete() {
+    if (!canCheckout || completing) return;
+    setCompleting(true);
+    setError(null);
+
+    try {
+      const venta = await registrarVenta(items, summary.grandTotal);
+
+      onComplete({
+        receiptNumber: venta.saleId,
+        createdAt:     venta.timestamp,
+        items,
+        summary,
+        payments,
+        change,
+      });
+
+      setPayments([]);
+    } catch {
+      setError('No se pudo registrar la venta. Verifica la conexión e intenta de nuevo.');
+    } finally {
+      setCompleting(false);
+    }
   }
 
   return (
@@ -102,14 +120,19 @@ export function CheckoutPanel({ items, summary, onComplete, amountRef }: Props) 
         <span>Cambio: <strong>{formatMoney(change)}</strong></span>
       </div>
 
+      {/* Error de API */}
+      {error && (
+        <div className='fb-err'>{error}</div>
+      )}
+
       {/* Completar */}
       <button
         className='co-complete'
-        disabled={!canCheckout}
+        disabled={!canCheckout || completing}
         onClick={complete}
         tabIndex={0}
       >
-        Completar Venta
+        {completing ? 'Registrando...' : 'Completar Venta'}
       </button>
 
     </div>

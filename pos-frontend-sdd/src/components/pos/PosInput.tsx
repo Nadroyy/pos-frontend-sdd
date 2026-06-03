@@ -24,39 +24,70 @@ export function PosInput({ onAdd, inputRef, value, onChange }: Props) {
   const localRef = useRef<HTMLInputElement>(null);
   const ref = inputRef ?? localRef;
 
-  const [feedback, setFeedback] = useState<{ type: 'ok' | 'error'; text: string } | null>(null);
+  const [feedback,       setFeedback]       = useState<{ type: 'ok' | 'error'; text: string } | null>(null);
+  const [searchResults,  setSearchResults]  = useState<Product[]>([]);
+  const [priceResults,   setPriceResults]   = useState<Product[]>([]);
+  const [searching,      setSearching]      = useState(false);
 
   useEffect(() => { ref.current?.focus(); }, []);
 
-  function showFeedback(type: 'ok' | 'error', text: string, ms = 2000) {
-    setFeedback({ type, text });
-    setTimeout(() => setFeedback(null), ms);
-  }
-
-  function detectMode(text: string): Mode {
-    const t = text.trim();
+  const mode: Mode = (() => {
+    const t = value.trim();
     if (!t) return 'idle';
     if (isPriceQuery(t)) return 'price';
     if (isPureBarcode(t)) return 'barcode';
     return 'search';
-  }
-
-  const mode = detectMode(value);
-
-  const searchResults: Product[] = mode === 'search'
-    ? searchProducts(value.trim(), 'Todos').slice(0, 6)
-    : [];
+  })();
 
   const priceQuery = isPriceQuery(value) ? value.trim().slice(3).trim() : '';
-  const priceResults: Product[] = mode === 'price' && priceQuery
-    ? searchProducts(priceQuery, 'Todos')
-    : [];
+
+  // ── Fetch asíncrono al cambiar el query ──────────────────────────────────
+  useEffect(() => {
+    if (mode !== 'search' && mode !== 'price') {
+      setSearchResults([]);
+      setPriceResults([]);
+      return;
+    }
+
+    const query = mode === 'search' ? value.trim() : priceQuery;
+    if (!query) {
+      setSearchResults([]);
+      setPriceResults([]);
+      return;
+    }
+
+    let cancelled = false;
+    setSearching(true);
+
+    searchProducts(query, 'Todos')
+      .then(results => {
+        if (cancelled) return;
+        if (mode === 'search') setSearchResults(results.slice(0, 6));
+        else                   setPriceResults(results);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSearchResults([]);
+        setPriceResults([]);
+      })
+      .finally(() => { if (!cancelled) setSearching(false); });
+
+    return () => { cancelled = true; };
+  }, [value, mode, priceQuery]);
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  function showFeedback(type: 'ok' | 'error', text: string, ms = 2000) {
+    setFeedback({ type, text });
+    setTimeout(() => setFeedback(null), ms);
+  }
 
   function addProduct(product: Product) {
     const result = onAdd(product);
     if (result === 'ok') {
       showFeedback('ok', `+ ${product.name}`);
       onChange('');
+      setSearchResults([]);
+      setPriceResults([]);
       ref.current?.focus();
     } else if (result === 'no_stock') {
       showFeedback('error', 'Sin existencias.');
@@ -70,9 +101,12 @@ export function PosInput({ onAdd, inputRef, value, onChange }: Props) {
     if (!t) return;
 
     if (mode === 'barcode') {
-      const product = findProductByBarcode(t);
-      if (!product) { showFeedback('error', 'No encontrado.'); return; }
-      addProduct(product);
+      findProductByBarcode(t)
+        .then(product => {
+          if (!product) { showFeedback('error', 'No encontrado.'); return; }
+          addProduct(product);
+        })
+        .catch(() => showFeedback('error', 'Error de conexión.'));
       return;
     }
 
@@ -89,7 +123,7 @@ export function PosInput({ onAdd, inputRef, value, onChange }: Props) {
 
   function handleKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') { e.preventDefault(); handleEnter(); }
-    if (e.key === 'Escape') { onChange(''); setFeedback(null); }
+    if (e.key === 'Escape') { onChange(''); setFeedback(null); setSearchResults([]); setPriceResults([]); }
   }
 
   const showResults = value.trim().length > 0 && (mode === 'search' || mode === 'price');
@@ -108,6 +142,7 @@ export function PosInput({ onAdd, inputRef, value, onChange }: Props) {
           spellCheck={false}
           className='search-input'
         />
+        {searching && <span className='search-loading'>...</span>}
       </div>
 
       {feedback && (
@@ -116,7 +151,7 @@ export function PosInput({ onAdd, inputRef, value, onChange }: Props) {
 
       {showResults && mode === 'search' && (
         <div className='results-list'>
-          {searchResults.length === 0
+          {searchResults.length === 0 && !searching
             ? <div className='result-none'>Sin resultados</div>
             : searchResults.map(p => (
               <div key={p.id} className='result-row'>
@@ -134,7 +169,7 @@ export function PosInput({ onAdd, inputRef, value, onChange }: Props) {
               </div>
             ))
           }
-          {searchResults.length === 1 && (
+          {searchResults.length === 1 && !searching && (
             <div className='result-hint'>Enter para agregar</div>
           )}
         </div>
@@ -142,7 +177,7 @@ export function PosInput({ onAdd, inputRef, value, onChange }: Props) {
 
       {showResults && mode === 'price' && (
         <div className='results-list'>
-          {priceResults.length === 0
+          {priceResults.length === 0 && !searching
             ? <div className='result-none'>No encontrado: {priceQuery}</div>
             : priceResults.map(p => (
               <div key={p.id} className='result-row'>
